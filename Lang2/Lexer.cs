@@ -90,8 +90,12 @@ namespace Lang2
                     continue;
                 }
 
-                // Check for variable names or keywords
-                if (validNamingChars.Contains(input[i]))
+                // Check for variable names or keywords, allowing digits after the first character
+                if (validNamingChars.Contains(input[i]) && temp.Length == 0)
+                {
+                    temp += input[i];
+                    continue;
+                } else if ((validNamingChars.Contains(input[i]) || nums.Contains(input[i])) && temp.Length > 0)
                 {
                     temp += input[i];
                     continue;
@@ -99,7 +103,6 @@ namespace Lang2
                 {
                     Tokens.Add(new Token(TokenType.ID, temp));
                     temp = "";
-                    continue;
                 }
 
                 // Check if the current character is a single character operator
@@ -133,11 +136,11 @@ namespace Lang2
                         continue;
 
                     default:
-                        continue;
+                        break;
                 }
             }
 
-            // Check for numeric constants
+            // TODO: Check for numeric constants
 
 
             // Check IDs for keywords
@@ -148,9 +151,12 @@ namespace Lang2
                     if (keywordDict.ContainsKey(token.raw))
                     {
                         token.type = keywordDict[token.raw];
+                        continue;
                     }
                 }
             }
+
+            // TODO: Stop ignoring unknown tokens
         }
 
         public enum TokenType
