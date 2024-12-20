@@ -27,6 +27,8 @@ namespace Lang2
             opDict.Add('/', TokenType.FwdSlash);
             opDict.Add('.', TokenType.Period);
             opDict.Add(';', TokenType.LineEnd);
+            opDict.Add('?', TokenType.QuestionMark);
+            opDict.Add('"', TokenType.QuotationMark);
         }
 
         public void Tokenize(FileInfo file)
@@ -51,11 +53,12 @@ namespace Lang2
 
             string temp = "";
 
+            // Length - 1 to ignore the space we add at the end
             for (int i = 0; i < input.Length - 1; i++)
             {
-                // TODO: Check for comments
+                // TODO: Check for comments, maybe do this after tokenization
 
-                // Continue if current char is a space or newline. We don't care about whitespace.
+                // Continue if current char is a space or newline. We don't care about whitespace
                 if (input[i] == ' ' || input[i] == '\n')
                 {
                     if (temp.Length > 0)
@@ -112,13 +115,97 @@ namespace Lang2
                         continue;
                 }
             }
+
+            // Check IDs for keywords
+            foreach (Token token in Tokens)
+            {
+                if (token.type == TokenType.ID)
+                {
+                    switch (token.raw)
+                    {
+                        // Bool constant values
+                        case "true":
+                            token.type = TokenType.True;
+                            break;
+
+                        case "false":
+                            token.type = TokenType.False;
+                            break;
+
+                        // Number data type keywords
+                        case "byte":
+                            token.type = TokenType.Byte;
+                            break;
+
+                        case "short":
+                            token.type = TokenType.Short;
+                            break;
+
+                        case "int":
+                            token.type = TokenType.Int;
+                            break;
+
+                        case "long":
+                            token.type = TokenType.Long;
+                            break;
+
+                        case "float":
+                            token.type = TokenType.Float;
+                            break;
+
+                        case "double":
+                            token.type = TokenType.Double;
+                            break;
+
+                        case "bool":
+                            token.type = TokenType.Bool;
+                            break;
+
+                        // Other keywords
+                        case "if":
+                            token.type = TokenType.If;
+                            break;
+
+                        case "elif":
+                            token.type = TokenType.Elif;
+                            break;
+
+                        case "else":
+                            token.type = TokenType.Else;
+                            break;
+
+                        case "while":
+                            token.type = TokenType.While;
+                            break;
+
+                        case "do":
+                            token.type = TokenType.Do;
+                            break;
+
+                        case "and":
+                            token.type = TokenType.And;
+                            break;
+
+                        case "xor":
+                            token.type = TokenType.Xor;
+                            break;
+
+                        case "or":
+                            token.type = TokenType.Or;
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
         }
 
         public enum TokenType
         {
             // ID in this case represents a variable or function name
-            ID, Int, Long,
-            Float, Double,
+            ID,
+
             // Symbols
             LineEnd,
             OpenParen, CloseParen,
@@ -129,9 +216,22 @@ namespace Lang2
             Plus, Minus,
             BitShiftLeft, BitShiftRight,
             NotEqual, Comparison,
+            QuestionMark, QuotationMark,
             
             // Keywords
-            If, Elif, Else,
+            If, Elif, Else, While,
+            Do, And, Xor, Or,
+
+            // Constant Types
+            Int, Long, Float, Double,
+            Byte, Short, Char, Decimal,
+            Bool, True, False,
+
+            // Constants
+            StringConst, IntConst,
+            ByteConst, LongConst,
+            FloatConst, DoubleConst,
+            CharConst,
 
             // Other
             Unknown
