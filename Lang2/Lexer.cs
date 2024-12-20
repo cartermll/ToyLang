@@ -5,6 +5,7 @@ namespace Lang2
     internal class Lexer
     {
         private Dictionary<char, TokenType> opDict = new Dictionary<char, TokenType>();
+        private Dictionary<string, TokenType> keywordDict = new Dictionary<string, TokenType>();
         private string validNamingChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
         private string nums = "0123456789";
 
@@ -14,6 +15,7 @@ namespace Lang2
         {
             this.Tokens = new List<Token>();
 
+            // Add operators to dictionary
             opDict.Add('(', TokenType.OpenParen);
             opDict.Add(')', TokenType.CloseParen);
             opDict.Add('[', TokenType.OpenBracket);
@@ -29,6 +31,25 @@ namespace Lang2
             opDict.Add(';', TokenType.LineEnd);
             opDict.Add('?', TokenType.QuestionMark);
             opDict.Add('"', TokenType.QuotationMark);
+
+            // Add keywords to dictionary
+            keywordDict.Add("true", TokenType.True);
+            keywordDict.Add("false", TokenType.False);
+            keywordDict.Add("if", TokenType.If);
+            keywordDict.Add("elif", TokenType.Elif);
+            keywordDict.Add("else", TokenType.Else);
+            keywordDict.Add("do", TokenType.Do);
+            keywordDict.Add("while", TokenType.While);
+            keywordDict.Add("and", TokenType.And);
+            keywordDict.Add("or", TokenType.Or);
+            keywordDict.Add("xor", TokenType.Xor);
+            keywordDict.Add("byte", TokenType.Byte);
+            keywordDict.Add("short", TokenType.Short);
+            keywordDict.Add("int", TokenType.Int);
+            keywordDict.Add("long", TokenType.Long);
+            keywordDict.Add("float", TokenType.Float);
+            keywordDict.Add("double", TokenType.Double);
+            keywordDict.Add("bool", TokenType.Bool);
         }
 
         public void Tokenize(FileInfo file)
@@ -88,7 +109,7 @@ namespace Lang2
                     continue;
                 }
 
-                // Check for multicharacter operators
+                // Check for multicharacter operators || maybe make this a dictionary like the others
                 switch (input[i].ToString() + input[i + 1].ToString())
                 {
                     case "<<":
@@ -97,7 +118,7 @@ namespace Lang2
                         continue;
 
                     case ">>":
-                        Tokens.Add(new Token(TokenType.BitShiftRight, "<<"));
+                        Tokens.Add(new Token(TokenType.BitShiftRight, ">>"));
                         i += 1;
                         continue;
 
@@ -116,86 +137,17 @@ namespace Lang2
                 }
             }
 
+            // Check for numeric constants
+
+
             // Check IDs for keywords
             foreach (Token token in Tokens)
             {
                 if (token.type == TokenType.ID)
                 {
-                    switch (token.raw)
+                    if (keywordDict.ContainsKey(token.raw))
                     {
-                        // Bool constant values
-                        case "true":
-                            token.type = TokenType.True;
-                            break;
-
-                        case "false":
-                            token.type = TokenType.False;
-                            break;
-
-                        // Number data type keywords
-                        case "byte":
-                            token.type = TokenType.Byte;
-                            break;
-
-                        case "short":
-                            token.type = TokenType.Short;
-                            break;
-
-                        case "int":
-                            token.type = TokenType.Int;
-                            break;
-
-                        case "long":
-                            token.type = TokenType.Long;
-                            break;
-
-                        case "float":
-                            token.type = TokenType.Float;
-                            break;
-
-                        case "double":
-                            token.type = TokenType.Double;
-                            break;
-
-                        case "bool":
-                            token.type = TokenType.Bool;
-                            break;
-
-                        // Other keywords
-                        case "if":
-                            token.type = TokenType.If;
-                            break;
-
-                        case "elif":
-                            token.type = TokenType.Elif;
-                            break;
-
-                        case "else":
-                            token.type = TokenType.Else;
-                            break;
-
-                        case "while":
-                            token.type = TokenType.While;
-                            break;
-
-                        case "do":
-                            token.type = TokenType.Do;
-                            break;
-
-                        case "and":
-                            token.type = TokenType.And;
-                            break;
-
-                        case "xor":
-                            token.type = TokenType.Xor;
-                            break;
-
-                        case "or":
-                            token.type = TokenType.Or;
-                            break;
-
-                        default:
-                            break;
+                        token.type = keywordDict[token.raw];
                     }
                 }
             }
