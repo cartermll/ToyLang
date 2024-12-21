@@ -31,6 +31,9 @@ namespace Lang2
             opDict.Add(';', TokenType.LineEnd);
             opDict.Add('?', TokenType.QuestionMark);
             opDict.Add('"', TokenType.QuotationMark);
+            opDict.Add('<', TokenType.LessThan);
+            opDict.Add('>', TokenType.GreaterThan);
+            opDict.Add('!', TokenType.Not);
 
             // Add keywords to dictionary
             keywordDict.Add("true", TokenType.True);
@@ -105,38 +108,35 @@ namespace Lang2
                     temp = "";
                 }
 
-                // Check if the current character is a single character operator
-                if (opDict.ContainsKey(input[i])) 
+                // Check for operators || maybe make this a dictionary like the others
+                if (opDict.ContainsKey(input[i]))
                 {
-                    Tokens.Add(new Token(opDict[input[i]], input[i].ToString()));
-                    continue;
-                }
+                    switch (input[i].ToString() + input[i + 1].ToString())
+                    {
+                        case "<<":
+                            Tokens.Add(new Token(TokenType.BitShiftLeft, "<<"));
+                            i += 1;
+                            continue;
 
-                // Check for multicharacter operators || maybe make this a dictionary like the others
-                switch (input[i].ToString() + input[i + 1].ToString())
-                {
-                    case "<<":
-                        Tokens.Add(new Token(TokenType.BitShiftLeft, "<<"));
-                        i += 1;
-                        continue;
+                        case ">>":
+                            Tokens.Add(new Token(TokenType.BitShiftRight, ">>"));
+                            i += 1;
+                            continue;
 
-                    case ">>":
-                        Tokens.Add(new Token(TokenType.BitShiftRight, ">>"));
-                        i += 1;
-                        continue;
+                        case "!=":
+                            Tokens.Add(new Token(TokenType.NotEqual, "!="));
+                            i += 1;
+                            continue;
 
-                    case "!=":
-                        Tokens.Add(new Token(TokenType.NotEqual, "!="));
-                        i += 1;
-                        continue;
+                        case "==":
+                            Tokens.Add(new Token(TokenType.Comparison, "=="));
+                            i += 1;
+                            continue;
 
-                    case "==":
-                        Tokens.Add(new Token(TokenType.Comparison, "=="));
-                        i += 1;
-                        continue;
-
-                    default:
-                        break;
+                        default:
+                            Tokens.Add(new Token(opDict[input[i]], input[i].ToString()));
+                            continue;
+                    }
                 }
             }
 
@@ -175,6 +175,8 @@ namespace Lang2
             BitShiftLeft, BitShiftRight,
             NotEqual, Comparison,
             QuestionMark, QuotationMark,
+            LessThan, GreaterThan,
+            Not,
             
             // Keywords
             If, Elif, Else, While,
