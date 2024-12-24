@@ -1,4 +1,14 @@
-﻿
+﻿/*  TODO:
+ *      High priority:
+ *          Add better error handling. store location data in the tokens to help the user locate the problem
+ *          Handle unknown tokens 
+ *          Check for comments
+ *          Store numeric literals,  maybe find a good way to separate data types in the lexing phase
+ *
+ *      Low priority:
+ *          Stop adding a space to the end of the input, feels weird
+ *          Maybe use regex
+*/
 
 namespace Lang2
 {
@@ -15,6 +25,7 @@ namespace Lang2
         {
             this.Tokens = new List<Token>();
 
+            #region opDict definition
             // Add operators to dictionary
             opDict.Add('(', TokenType.OpenParen);
             opDict.Add(')', TokenType.CloseParen);
@@ -30,11 +41,12 @@ namespace Lang2
             opDict.Add('.', TokenType.Period);
             opDict.Add(';', TokenType.LineEnd);
             opDict.Add('?', TokenType.QuestionMark);
-            opDict.Add('"', TokenType.QuotationMark);
             opDict.Add('<', TokenType.LessThan);
             opDict.Add('>', TokenType.GreaterThan);
             opDict.Add('!', TokenType.Not);
+            #endregion
 
+            #region keywordDict definition
             // Add keywords to dictionary
             keywordDict.Add("true", TokenType.True);
             keywordDict.Add("false", TokenType.False);
@@ -53,6 +65,7 @@ namespace Lang2
             keywordDict.Add("float", TokenType.Float);
             keywordDict.Add("double", TokenType.Double);
             keywordDict.Add("bool", TokenType.Bool);
+            #endregion
         }
 
         public void Tokenize(FileInfo file)
@@ -80,20 +93,25 @@ namespace Lang2
             // Length - 1 to ignore the space we add at the end
             for (int i = 0; i < input.Length - 1; i++)
             {
-                // TODO: Check for comments, maybe do this after tokenization
-
-                // Continue if current char is a space or newline. We don't care about whitespace
-                if (input[i] == ' ' || input[i] == '\n')
+                // Continue if current char is whitespace or a newline
+                if (char.IsWhiteSpace(input[i]) || input[i] == '\n')
                 {
                     if (temp.Length > 0)
                     {
-                        Tokens.Add(new Token(TokenType.ID, temp));
+                        AddToken(TokenType.ID, temp);
                         temp = "";
                     }
                     continue;
                 }
 
-                // Check for variable names or keywords, allowing digits after the first character
+                // Check for string literals
+                if (input[i] == '"')
+                {
+                    AddStringLiteral(input, i);
+                    i += Tokens[Tokens.Count - 1].Raw.Length + 2; // iterate i past the string, adding two to ignore the first and second quote
+                }
+
+                // Check for symbol names, allowing digits after the first character
                 if (validNamingChars.Contains(input[i]) && temp.Length == 0)
                 {
                     temp += input[i];
@@ -104,59 +122,81 @@ namespace Lang2
                     continue;
                 } else if (temp.Length > 0)
                 {
-                    Tokens.Add(new Token(TokenType.ID, temp));
+                    AddToken(TokenType.ID, temp);
                     temp = "";
                 }
 
-                // Check for operators || maybe make this a dictionary like the others
+                // Check for operators, assumes the first char of our two-character ops are in the dictionary already
                 if (opDict.ContainsKey(input[i]))
                 {
                     switch (input[i].ToString() + input[i + 1].ToString())
                     {
                         case "<<":
-                            Tokens.Add(new Token(TokenType.BitShiftLeft, "<<"));
+                            AddToken(TokenType.BitShiftLeft, "<<");
                             i += 1;
                             continue;
 
                         case ">>":
-                            Tokens.Add(new Token(TokenType.BitShiftRight, ">>"));
+                            AddToken(TokenType.BitShiftRight, ">>");
                             i += 1;
                             continue;
 
                         case "!=":
-                            Tokens.Add(new Token(TokenType.NotEqual, "!="));
+                            AddToken(TokenType.NotEqual, "!=");
                             i += 1;
                             continue;
 
                         case "==":
-                            Tokens.Add(new Token(TokenType.Comparison, "=="));
+                            AddToken(TokenType.Comparison, "==");
                             i += 1;
                             continue;
 
                         default:
-                            Tokens.Add(new Token(opDict[input[i]], input[i].ToString()));
+                            AddToken(opDict[input[i]], input[i].ToString());
                             continue;
                     }
                 }
+
+                // Add unknown token if nothing above works
+                AddToken(TokenType.Unknown, input[i].ToString());
             }
 
-            // TODO: Check for numeric constants
-
-
-            // Check IDs for keywords
+            // Check symbols for keywords
             foreach (Token token in Tokens)
             {
-                if (token.type == TokenType.ID)
+                if (token.Type == TokenType.ID)
                 {
-                    if (keywordDict.ContainsKey(token.raw))
+                    if (keywordDict.ContainsKey(token.Raw))
                     {
-                        token.type = keywordDict[token.raw];
+                        token.Type = keywordDict[token.Raw];
                         continue;
                     }
                 }
             }
+        }
 
-            // TODO: Stop ignoring unknown tokens
+        // Just makes adding tokens a little cleaner
+        private void AddToken(TokenType type, string raw)
+        {
+            Tokens.Add(new Token(type, raw));
+        }
+
+        // Finds a string literal and returns its value.
+        private void AddStringLiteral(string input, int index)
+        {
+            int start = index;
+
+            while (input[++index] != '"')
+            {
+                if (index >= input.Length - 1)
+                {
+                    throw new Exception("Unterminated string");
+                } 
+
+                index++;
+            }
+
+            AddToken(TokenType.StringLiteral, input.Substring(start + 1, (index - 1) - start));
         }
 
         public enum TokenType
@@ -174,24 +214,21 @@ namespace Lang2
             Plus, Minus,
             BitShiftLeft, BitShiftRight,
             NotEqual, Comparison,
-            QuestionMark, QuotationMark,
+            QuestionMark, Not,
             LessThan, GreaterThan,
-            Not,
+
             
             // Keywords
             If, Elif, Else, While,
             Do, And, Xor, Or,
 
-            // Constant Types
+            // Types (Keywords)
             Int, Long, Float, Double,
             Byte, Short, Char, Decimal,
             Bool, True, False,
 
-            // Constants
-            StringConst, IntConst,
-            ByteConst, LongConst,
-            FloatConst, DoubleConst,
-            CharConst,
+            // Literal Types
+            StringLiteral,
 
             // Other
             Unknown

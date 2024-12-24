@@ -4,24 +4,24 @@ namespace Lang2
 {
     internal class Token
     {
-        public Lexer.TokenType type;
-        public string raw;
+        public Lexer.TokenType Type { get; set; }
+        public string Raw { get; set; }
 
-        public Token(Lexer.TokenType type, string raw)
+        public Token(Lexer.TokenType Type, string Raw)
         {
-            this.type = type;
-            this.raw = raw;
+            this.Type = Type;
+            this.Raw = Raw;
         }
 
-        public Token(Lexer.TokenType type)
+        public Token(Lexer.TokenType Type)
         {
-            this.type = type;
-            this.raw = "";
+            this.Type = Type;
+            this.Raw = "";
         }
         
         public override string ToString()
         {
-            return $"[type: {type.ToString()}, raw: \"{raw}\"]";
+            return $"[Type: {Type.ToString()}, Raw: \"{Raw}\"]";
         }
     }
 }
