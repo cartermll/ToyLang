@@ -8,7 +8,10 @@
  *      Low priority:
  *          Stop adding a space to the end of the input, feels weird
  *          Maybe use regex
+ *          Add support for escape sequences in string literals 
 */
+
+using System;
 
 namespace Lang2
 {
@@ -18,6 +21,9 @@ namespace Lang2
         private Dictionary<string, TokenType> keywordDict = new Dictionary<string, TokenType>();
         private string validNamingChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
         private string nums = "0123456789";
+
+        // Store errors so we can print them all at the end of tokenization
+        List<Error> errors = new List<Error>();
 
         public List<Token> Tokens;
 
@@ -89,12 +95,18 @@ namespace Lang2
             input += " ";
 
             string temp = "";
+            int line = 0;
+            int column = 0;
+            string lineText = "";
 
             // Length - 1 to ignore the space we add at the end
             for (int i = 0; i < input.Length - 1; i++)
             {
+                lineText += input[i];
+                column++;
+
                 // Continue if current char is whitespace or a newline
-                if (char.IsWhiteSpace(input[i]) || input[i] == '\n')
+                if (char.IsWhiteSpace(input[i]))
                 {
                     if (temp.Length > 0)
                     {
@@ -102,13 +114,29 @@ namespace Lang2
                         temp = "";
                     }
                     continue;
+                } else if (input[i] == '\n')
+                {
+                    line++;
+                    lineText = "";
+                    column = 0;
                 }
 
                 // Check for string literals
                 if (input[i] == '"')
                 {
-                    AddStringLiteral(input, i);
-                    i += Tokens[Tokens.Count - 1].Raw.Length + 2; // iterate i past the string, adding two to ignore the first and second quote
+                    int start = i;
+
+                    while (input[++i] != '"')
+                    {
+                        if (i >= input.Length - 1)
+                        {
+                            errors.Add(new Error("Unterminated String", lineText, line, column));
+                            break;
+                        }
+                    }
+
+                    AddToken(TokenType.StringLiteral, input.Substring(start + 1, (i - 1) - start));
+                    i++;
                 }
 
                 // Check for symbol names, allowing digits after the first character
@@ -173,6 +201,18 @@ namespace Lang2
                     }
                 }
             }
+
+            for (int i = 0; i < errors.Count; i++)
+            {
+                if (i == errors.Count - 1)
+                {
+                    Debug.PrintError(errors[i], true);
+                }
+                else
+                {
+                    Debug.PrintError(errors[i]);
+                }
+            }
         }
 
         // Just makes adding tokens a little cleaner
@@ -180,58 +220,40 @@ namespace Lang2
         {
             Tokens.Add(new Token(type, raw));
         }
+    }
 
-        // Finds a string literal and returns its value.
-        private void AddStringLiteral(string input, int index)
-        {
-            int start = index;
+    public enum TokenType
+    {
+        // ID in this case represents a variable or function name
+        ID,
 
-            while (input[++index] != '"')
-            {
-                if (index >= input.Length - 1)
-                {
-                    throw new Exception("Unterminated string");
-                } 
+        // Symbols
+        LineEnd,
+        OpenParen, CloseParen,
+        OpenBrace, CloseBrace,
+        OpenBracket, CloseBracket,
+        Period, FwdSlash,
+        Asterisk, Caret,
+        Plus, Minus,
+        BitShiftLeft, BitShiftRight,
+        NotEqual, Comparison,
+        QuestionMark, Not,
+        LessThan, GreaterThan,
 
-                index++;
-            }
+        
+        // Keywords
+        If, Elif, Else, While,
+        Do, And, Xor, Or,
 
-            AddToken(TokenType.StringLiteral, input.Substring(start + 1, (index - 1) - start));
-        }
+        // Types (Keywords)
+        Int, Long, Float, Double,
+        Byte, Short, Char, Decimal,
+        Bool, True, False,
 
-        public enum TokenType
-        {
-            // ID in this case represents a variable or function name
-            ID,
+        // Literal Types
+        StringLiteral,
 
-            // Symbols
-            LineEnd,
-            OpenParen, CloseParen,
-            OpenBrace, CloseBrace,
-            OpenBracket, CloseBracket,
-            Period, FwdSlash,
-            Asterisk, Caret,
-            Plus, Minus,
-            BitShiftLeft, BitShiftRight,
-            NotEqual, Comparison,
-            QuestionMark, Not,
-            LessThan, GreaterThan,
-
-            
-            // Keywords
-            If, Elif, Else, While,
-            Do, And, Xor, Or,
-
-            // Types (Keywords)
-            Int, Long, Float, Double,
-            Byte, Short, Char, Decimal,
-            Bool, True, False,
-
-            // Literal Types
-            StringLiteral,
-
-            // Other
-            Unknown
-        }
+        // Other
+        Unknown
     }
 }
