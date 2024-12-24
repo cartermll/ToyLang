@@ -1,6 +1,5 @@
 ﻿/*  TODO:
  *      High priority:
- *          Add better error handling. store location data in the tokens to help the user locate the problem
  *          Handle unknown tokens 
  *          Check for comments
  *          Store numeric literals,  maybe find a good way to separate data types in the lexing phase
@@ -9,6 +8,7 @@
  *          Stop adding a space to the end of the input, feels weird
  *          Maybe use regex
  *          Add support for escape sequences in string literals 
+ *          Make errors more detailed
 */
 
 using System;
